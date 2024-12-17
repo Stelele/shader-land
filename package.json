@@ -10,11 +10,17 @@
   },
   "dependencies": {
     "@monaco-editor/loader": "^1.4.0",
+    "@webgpu/types": "^0.1.51",
     "monaco-editor": "^0.52.2",
-    "vue": "^3.5.12"
+    "vue": "^3.5.12",
+    "vue-router": "^4.5.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.1.4",
+    "autoprefixer": "^10.4.20",
+    "daisyui": "^4.12.22",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.16",
     "typescript": "~5.6.2",
     "vite": "^5.4.10",
     "vue-tsc": "^2.1.8"

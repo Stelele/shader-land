@@ -1,5 +1,5 @@
 <template>
-  <div id="editor-monaco" ref="editorMonaco"></div>
+  <div id="editor-monaco" ref="editorMonaco" class="w-full h-full min-h-3"></div>
 </template>
 
 <script lang="ts" setup>
@@ -40,12 +40,3 @@ fn fs() -> @location(0) vec4f {
 
 
 </script>
-
-<style scoped>
-#editor-monaco {
-  height: 100%;
-  width: 100%;
-  min-height: 50vh;
-  font-family: sans-serif;
-}
-</style>

@@ -1,11 +1,11 @@
 <template>
-  <Editor @on-value-change="onEditorChange" />
+  <nav>
+    <TopAppBar />
+  </nav>
+  <RouterView />
 </template>
 
 <script setup lang="ts">
-import Editor from './components/Editor.vue';
-
-function onEditorChange(code: string) {
-  console.log(code)
-}
+import { RouterView } from 'vue-router';
+import TopAppBar from './components/TopAppBar.vue';
 </script>
