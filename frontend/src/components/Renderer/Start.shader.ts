@@ -14,7 +14,7 @@ fn vs(@builtin(vertex_index) idx: u32) -> @builtin(position) vec4f {
 export const Uniforms = /*wgsl*/`
 @group(0) @binding(0) var<uniform> iResolution: vec3f;   // viewport resolution (in pixels)
 @group(0) @binding(1) var<uniform> iTime: f32;           // shader playback time (in seconds)
-@group(0) @binding(2) var<uniform> iTimeDelta: f32;      // rener time (in seconds)
+@group(0) @binding(2) var<uniform> iTimeDelta: f32;      // render time (in seconds)
 @group(0) @binding(3) var<uniform> iFrameRate: f32;      // shader frame rate
 @group(0) @binding(4) var<uniform> iFrame: u32;          // shader playback frame
 `
