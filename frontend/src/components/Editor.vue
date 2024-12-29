@@ -1,5 +1,5 @@
 <template>
-  <div id="editor-monaco" ref="editorMonaco" class="w-full h-full min-h-3"></div>
+  <div id="editor-monaco" ref="editorMonaco" class="w-full h-[400px] min-h-3"></div>
 </template>
 
 <script lang="ts" setup>

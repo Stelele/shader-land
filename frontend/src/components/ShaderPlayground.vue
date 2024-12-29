@@ -1,12 +1,17 @@
 <template>
-    <div class="grid grid-cols-5 gap-4">
-        <div class="card bg-base-100 col-span-2 w-full shadow-xl">
-            <div class="card-body pl-4 pr-1">
+    <div class="grid grid-cols-3 md:grid-cols-5 gap-2">
+        <div class="card card-compact bg-base-100 col-span-3 md:col-span-2 shadow-xl">
+            <div class="card-body">
                 <Renderer ref="renderer" />
+                <div class="card-actions justify-end">
+                    <div class="hover:cursor-pointer" @click="onFullScreen">
+                        <span class="material-icons-outlined">fullscreen</span>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="card bg-base-100 col-span-3 w-full shadow-xl">
-            <div class="card-body rounded-2xl min-h-[70vh]">
+        <div class="card card-compact bg-base-100 col-span-3 md:col-span-3 shadow-xl">
+            <div class="card-body">
                 <Editor :starting-code="props.startCode" @on-value-change="onCodeChange" />
             </div>
         </div>
@@ -26,5 +31,9 @@ const props = defineProps<Props>()
 const renderer = ref<InstanceType<typeof Renderer> | null>(null)
 function onCodeChange(code: string) {
     renderer.value?.loadFragmentShader(code)
+}
+
+function onFullScreen() {
+    renderer.value?.setFullScreen()
 }
 </script>

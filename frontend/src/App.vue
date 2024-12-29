@@ -1,7 +1,5 @@
 <template>
-  <nav>
-    <TopAppBar />
-  </nav>
+  <TopAppBar />
   <RouterView />
 </template>
 
