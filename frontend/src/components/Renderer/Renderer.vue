@@ -1,6 +1,6 @@
 <template>
     <div id="container">
-        <canvas class="w-full min-w-4 h-[288px]" ref="webgpuCanvas"></canvas>
+        <canvas class="w-full min-w-4 h-[45vh]" ref="webgpuCanvas"></canvas>
     </div>
 </template>
 

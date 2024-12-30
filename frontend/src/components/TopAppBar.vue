@@ -11,11 +11,11 @@
 
             <div class="flex-none">
                 <ul class="menu menu-horizontal px-1">
-                    <span class="menu menu-horizontal mr-0 pr-0">Welcome</span>
+                    <span v-if="isAuthenticated" class="menu menu-horizontal mr-0 pr-0">Welcome</span>
                     <li v-if="isAuthenticated" class="hover:text-blue-600">
                         <RouterLink to="" class="hover:bg-transparent">{{ displayName }}</RouterLink>
                     </li>
-                    <span class="menu menu-horizontal">|</span>
+                    <span v-if="isAuthenticated" class="menu menu-horizontal">|</span>
                     <li class="hover:text-blue-600">
                         <RouterLink to="/view/1" class="hover:bg-transparent">Browse</RouterLink>
                     </li>

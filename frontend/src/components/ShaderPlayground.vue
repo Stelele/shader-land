@@ -1,12 +1,15 @@
 <template>
     <div class="grid grid-cols-3 md:grid-cols-5 gap-2">
-        <div class="card card-compact bg-base-100 col-span-3 md:col-span-2 shadow-xl">
-            <div class="card-body">
-                <Renderer ref="renderer" />
-                <div class="card-actions justify-end">
-                    <div class="hover:cursor-pointer" @click="onFullScreen">
-                        <span class="material-icons-outlined">fullscreen</span>
+        <div class="flex flex-col gap-4 col-span-2">
+            <div class="card card-compact bg-base-100 md:col-span-2 shadow-xl">
+                <div class="card-body">
+                    <Renderer ref="renderer" />
+                    <div class="card-actions justify-end">
+                        <div class="hover:cursor-pointer" @click="onFullScreen">
+                            <span class="material-icons-outlined">fullscreen</span>
+                        </div>
                     </div>
+                    <slot></slot>
                 </div>
             </div>
         </div>
