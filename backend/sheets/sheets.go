@@ -58,7 +58,7 @@ func GetShaderDetail(spreadSheetId string, shaderName string) (ShaderDetail, err
 	return details, nil
 }
 
-func AppendShaderDetail(spreadSheetId string, details ShaderDetail) error {
+func AppendShaderDetail(spreadSheetId string, sheetId int64, details ShaderDetail) error {
 	service := getSheetsService()
 
 	nameExists, errMsg := checkEntryExists(service, spreadSheetId, details.Name, "B2:B", 0)
@@ -82,6 +82,28 @@ func AppendShaderDetail(spreadSheetId string, details ShaderDetail) error {
 	if err != nil {
 		log.Println(err)
 		return err
+	}
+
+	sortRangeRequest := new(sheets.SortRangeRequest)
+	sortRangeRequest.Range = &sheets.GridRange{
+		SheetId:          sheetId,
+		StartRowIndex:    1,
+		StartColumnIndex: 0,
+		EndColumnIndex:   5,
+	}
+	sortRangeRequest.SortSpecs = make([]*sheets.SortSpec, 1)
+	sortRangeRequest.SortSpecs[0] = &sheets.SortSpec{
+		SortOrder:      "ASCENDING",
+		DimensionIndex: 1,
+	}
+
+	updateRequest := sheets.BatchUpdateSpreadsheetRequest{}
+	updateRequest.Requests = make([]*sheets.Request, 1)
+	updateRequest.Requests[0] = &sheets.Request{SortRange: sortRangeRequest}
+
+	_, err2 := service.Spreadsheets.BatchUpdate(spreadSheetId, &updateRequest).Do()
+	if err2 != nil {
+		return err2
 	}
 
 	return nil

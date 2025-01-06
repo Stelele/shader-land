@@ -6,32 +6,36 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 )
 
 var env map[string]string
+var SPREAD_SHEET_ID = "SHEETS_SPREAD_SHEET_ID"
+var SHADERS_SHEET_ID = "SHEETS_SHADERS_SHEET_ID"
 
 func main() {
-	temp, err := godotenv.Read()
+	temp, err := godotenv.Read(".env", ".env.local")
 	if err != nil {
 		log.Fatal("Failed to load environment variables")
 	}
 	env = temp
 
 	r := mux.NewRouter()
-	r.HandleFunc("/test", handleTest).Methods("GET")
-	r.HandleFunc("/test", handleTestPost).Methods("POST")
+	r.HandleFunc("/shaders", handleShadersGet).Methods("GET")
+	r.HandleFunc("/shaders", handleShadersPost).Methods("POST")
 
 	log.Println("Starting server on: http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
 
-func handleTest(w http.ResponseWriter, r *http.Request) {
+func handleShadersGet(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "text/json")
 
-	response, err := sheets.GetShaderDetail(env["SPREAD_SHEET_ID"], "test")
+	shaderName := r.URL.Query().Get("name")
+	response, err := sheets.GetShaderDetail(env[SPREAD_SHEET_ID], shaderName)
 	if err != nil {
 		log.Print(err)
 		http.NotFound(w, r)
@@ -41,7 +45,7 @@ func handleTest(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-func handleTestPost(w http.ResponseWriter, r *http.Request) {
+func handleShadersPost(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 
 	data := sheets.ShaderDetail{}
@@ -53,7 +57,8 @@ func handleTestPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = sheets.AppendShaderDetail(env["SPREAD_SHEET_ID"], data)
+	sheetId, _ := strconv.Atoi(env[SHADERS_SHEET_ID])
+	err = sheets.AppendShaderDetail(env[SPREAD_SHEET_ID], int64(sheetId), data)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		response := map[string]string{"message": "Internal Server Error", "detail": fmt.Sprint(err)}
