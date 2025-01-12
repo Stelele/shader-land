@@ -24,17 +24,19 @@ func main() {
 	env = temp
 
 	r := mux.NewRouter()
+
 	r.HandleFunc("/shaders", handleShadersGet).Methods("GET")
 	r.HandleFunc("/shaders", handleShadersPost).Methods("POST")
+	r.HandleFunc("/shaders/{name}", handleShaderGet).Methods("GET")
 
 	log.Println("Starting server on: http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
 
-func handleShadersGet(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "text/json")
+func handleShaderGet(w http.ResponseWriter, r *http.Request) {
+	addResponseHeaders(w)
 
-	shaderName := r.URL.Query().Get("name")
+	shaderName := mux.Vars(r)["name"]
 	response, err := sheets.GetShaderDetail(env[SPREAD_SHEET_ID], shaderName)
 	if err != nil {
 		log.Print(err)
@@ -46,9 +48,9 @@ func handleShadersGet(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleShadersPost(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "application/json")
+	addResponseHeaders(w)
 
-	data := sheets.ShaderDetail{}
+	data := sheets.ShaderDetailRequest{}
 	err := json.NewDecoder(r.Body).Decode(&data)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -58,7 +60,7 @@ func handleShadersPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sheetId, _ := strconv.Atoi(env[SHADERS_SHEET_ID])
-	err = sheets.AppendShaderDetail(env[SPREAD_SHEET_ID], int64(sheetId), data)
+	response, err := sheets.AppendShaderDetail(env[SPREAD_SHEET_ID], sheetId, data)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		response := map[string]string{"message": "Internal Server Error", "detail": fmt.Sprint(err)}
@@ -67,4 +69,41 @@ func handleShadersPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(response)
+}
+
+func addResponseHeaders(w http.ResponseWriter) {
+	w.Header().Add("Access-Control-Allow-Origin", "*")
+	w.Header().Add("Content-Type", "application/json")
+}
+
+func handleShadersGet(w http.ResponseWriter, r *http.Request) {
+	addResponseHeaders(w)
+
+	params := r.URL.Query()
+	var startRow int = 2
+	var endRow int = 20
+
+	if params.Get("start") != "" {
+		val, err := strconv.Atoi(params.Get("start"))
+		if err == nil {
+			startRow = val
+		}
+	}
+	if params.Get("end") != "" {
+		val, err := strconv.Atoi(params.Get("end"))
+		if err == nil {
+			endRow = val
+		}
+	}
+
+	response, err := sheets.GetShaderDetails(env[SPREAD_SHEET_ID], startRow, endRow)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		response := map[string]string{"message": "Internal Server Error", "detail": fmt.Sprint(err)}
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	json.NewEncoder(w).Encode(response)
 }

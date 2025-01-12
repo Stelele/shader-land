@@ -12,6 +12,7 @@
     "@auth0/auth0-vue": "^2.3.3",
     "@monaco-editor/loader": "^1.4.0",
     "@webgpu/types": "^0.1.51",
+    "axios": "^1.7.9",
     "googleapis": "^144.0.0",
     "material-icons": "^1.13.12",
     "monaco-editor": "^0.52.2",

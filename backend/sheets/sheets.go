@@ -4,17 +4,32 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 
+	"github.com/google/uuid"
 	"google.golang.org/api/option"
 	"google.golang.org/api/sheets/v4"
 )
 
 type ShaderDetail struct {
-	UserId      string `json:"userId"`
-	Name        string `json:"name"`
-	Tags        string `json:"tags"`
-	Description string `json:"description"`
-	Code        string `json:"code"`
+	Id           string `json:"id"`
+	Email        string `json:"email"`
+	UserName     string `json:"userName"`
+	Name         string `json:"name"`
+	Tags         string `json:"tags"`
+	Description  string `json:"description"`
+	Code         string `json:"code"`
+	CreationDate int    `json:"creationDate"`
+}
+
+type ShaderDetailRequest struct {
+	Email        string `json:"email"`
+	UserName     string `json:"userName"`
+	Name         string `json:"name"`
+	Tags         string `json:"tags"`
+	Description  string `json:"description"`
+	Code         string `json:"code"`
+	CreationDate int    `json:"creationDate"`
 }
 
 func getSheetsService() *sheets.Service {
@@ -30,71 +45,100 @@ func getSheetsService() *sheets.Service {
 	return service
 }
 
-func GetShaderDetail(spreadSheetId string, shaderName string) (ShaderDetail, error) {
-	details := ShaderDetail{}
-	errorMsg := fmt.Errorf("Could not find details for shader: %v", shaderName)
+func GetShaderDetail(spreadSheetId string, shaderId string) (ShaderDetail, error) {
+	errorMsg := fmt.Errorf("Could not find details for shader: %v", shaderId)
 
 	service := getSheetsService()
-	readRange := "Shaders!A2:E"
+	readRange := "Shaders!A2:H"
 	response, err := service.Spreadsheets.Values.Get(spreadSheetId, readRange).Do()
 	if err != nil {
-		return details, errorMsg
+		return ShaderDetail{}, errorMsg
 	}
 	if len(response.Values) == 0 {
-		return details, errorMsg
+		return ShaderDetail{}, errorMsg
 	}
 
-	row, err := search(response.Values, shaderName, 1)
+	row, err := search(response.Values, shaderId, 0)
 	if err != nil {
-		return details, errorMsg
+		return ShaderDetail{}, errorMsg
 	}
 
-	details.UserId = row[0].(string)
-	details.Name = row[1].(string)
-	details.Tags = row[2].(string)
-	details.Description = row[3].(string)
-	details.Code = row[4].(string)
+	details := getShaderDetailObject(row)
+	return details, nil
+}
+
+func GetShaderDetails(spreadSheetId string, startRow int, endRow int) ([]ShaderDetail, error) {
+	details := make([]ShaderDetail, 0)
+	service := getSheetsService()
+	readRange := fmt.Sprintf("Shaders!A%d:H%d", startRow, endRow)
+	response, err := service.Spreadsheets.Values.Get(spreadSheetId, readRange).Do()
+	if err != nil {
+		return details, err
+	}
+	if len(response.Values) == 0 {
+		return details, nil
+	}
+
+	for _, row := range response.Values {
+		temp := getShaderDetailObject(row)
+		details = append(details, temp)
+	}
 
 	return details, nil
 }
 
-func AppendShaderDetail(spreadSheetId string, sheetId int64, details ShaderDetail) error {
+func getShaderDetailObject(row []interface{}) ShaderDetail {
+	creationDate, err := strconv.Atoi(row[7].(string))
+	if err != nil {
+		creationDate = 0
+	}
+	temp := ShaderDetail{
+		Id:           row[0].(string),
+		Email:        row[1].(string),
+		UserName:     row[2].(string),
+		Name:         row[3].(string),
+		Tags:         row[4].(string),
+		Description:  row[5].(string),
+		Code:         row[6].(string),
+		CreationDate: creationDate,
+	}
+
+	return temp
+}
+
+func AppendShaderDetail(spreadSheetId string, sheetId int, details ShaderDetailRequest) (ShaderDetail, error) {
 	service := getSheetsService()
 
-	nameExists, errMsg := checkEntryExists(service, spreadSheetId, details.Name, "B2:B", 0)
-	if errMsg != nil {
-		return errMsg
-	}
-	if nameExists {
-		return fmt.Errorf("Name already exists: %s", details.Name)
-	}
-
+	shaderId := uuid.NewString()
 	valueRange := sheets.ValueRange{}
 	valueRange.Values = make([][]interface{}, 1)
-	valueRange.Values[0] = make([]interface{}, 5)
-	valueRange.Values[0][0] = details.UserId
-	valueRange.Values[0][1] = details.Name
-	valueRange.Values[0][2] = details.Tags
-	valueRange.Values[0][3] = details.Description
-	valueRange.Values[0][4] = details.Code
+	valueRange.Values[0] = make([]interface{}, 8)
+	valueRange.Values[0][0] = shaderId
+	valueRange.Values[0][1] = details.Email
+	valueRange.Values[0][2] = details.UserName
+	valueRange.Values[0][3] = details.Name
+	valueRange.Values[0][4] = details.Tags
+	valueRange.Values[0][5] = details.Description
+	valueRange.Values[0][6] = details.Code
+	valueRange.Values[0][7] = details.CreationDate
 
-	_, err := service.Spreadsheets.Values.Append(spreadSheetId, "A:E", &valueRange).ValueInputOption("RAW").Do()
+	_, err := service.Spreadsheets.Values.Append(spreadSheetId, "A:H", &valueRange).ValueInputOption("RAW").Do()
 	if err != nil {
 		log.Println(err)
-		return err
+		return ShaderDetail{}, err
 	}
 
 	sortRangeRequest := new(sheets.SortRangeRequest)
 	sortRangeRequest.Range = &sheets.GridRange{
-		SheetId:          sheetId,
+		SheetId:          int64(sheetId),
 		StartRowIndex:    1,
 		StartColumnIndex: 0,
-		EndColumnIndex:   5,
+		EndColumnIndex:   8,
 	}
 	sortRangeRequest.SortSpecs = make([]*sheets.SortSpec, 1)
 	sortRangeRequest.SortSpecs[0] = &sheets.SortSpec{
 		SortOrder:      "ASCENDING",
-		DimensionIndex: 1,
+		DimensionIndex: 0,
 	}
 
 	updateRequest := sheets.BatchUpdateSpreadsheetRequest{}
@@ -103,16 +147,30 @@ func AppendShaderDetail(spreadSheetId string, sheetId int64, details ShaderDetai
 
 	_, err2 := service.Spreadsheets.BatchUpdate(spreadSheetId, &updateRequest).Do()
 	if err2 != nil {
-		return err2
+		return ShaderDetail{}, err2
 	}
 
-	return nil
+	updateDetail := ShaderDetail{
+		Id:           shaderId,
+		Email:        details.Email,
+		UserName:     details.UserName,
+		Name:         details.Name,
+		Tags:         details.Tags,
+		Description:  details.Description,
+		Code:         details.Code,
+		CreationDate: details.CreationDate,
+	}
+
+	return updateDetail, nil
 }
 
 func checkEntryExists(service *sheets.Service, spreadSheetId string, entry string, sheetRange string, col int) (bool, error) {
 	details, err := service.Spreadsheets.Values.Get(spreadSheetId, sheetRange).Do()
 	if err != nil {
 		return false, err
+	}
+	if len(details.Values) == 0 {
+		return false, nil
 	}
 
 	_, err2 := search(details.Values, entry, col)
