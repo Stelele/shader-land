@@ -2,6 +2,7 @@ package sheets
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"strconv"
@@ -109,7 +110,10 @@ func getShaderDetailObject(row []interface{}) ShaderDetail {
 func AppendShaderDetail(spreadSheetId string, sheetId int, details ShaderDetailRequest) (ShaderDetail, error) {
 	service := getSheetsService()
 
-	shaderId := uuid.NewString()
+	id := uuid.New()
+	encodedId := base64.StdEncoding.EncodeToString(id[:])
+	shaderId := encodedId[:len(encodedId)-2]
+
 	valueRange := sheets.ValueRange{}
 	valueRange.Values = make([][]interface{}, 1)
 	valueRange.Values[0] = make([]interface{}, 8)

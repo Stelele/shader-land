@@ -26,7 +26,7 @@ func main() {
 	r := mux.NewRouter()
 
 	r.HandleFunc("/shaders", handleShadersGet).Methods("GET")
-	r.HandleFunc("/shaders", handleShadersPost).Methods("POST")
+	r.HandleFunc("/shaders", handleShadersPost).Methods("POST", "OPTIONS")
 	r.HandleFunc("/shaders/{name}", handleShaderGet).Methods("GET")
 
 	log.Println("Starting server on: http://localhost:8080")
@@ -34,7 +34,7 @@ func main() {
 }
 
 func handleShaderGet(w http.ResponseWriter, r *http.Request) {
-	addResponseHeaders(w)
+	addResponseHeaders(&w)
 
 	shaderName := mux.Vars(r)["name"]
 	response, err := sheets.GetShaderDetail(env[SPREAD_SHEET_ID], shaderName)
@@ -48,7 +48,11 @@ func handleShaderGet(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleShadersPost(w http.ResponseWriter, r *http.Request) {
-	addResponseHeaders(w)
+	addResponseHeaders(&w)
+
+	if r.Method == "OPTIONS" {
+		return
+	}
 
 	data := sheets.ShaderDetailRequest{}
 	err := json.NewDecoder(r.Body).Decode(&data)
@@ -72,13 +76,17 @@ func handleShadersPost(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-func addResponseHeaders(w http.ResponseWriter) {
-	w.Header().Add("Access-Control-Allow-Origin", "*")
-	w.Header().Add("Content-Type", "application/json")
+func addResponseHeaders(w *http.ResponseWriter) {
+	// CORS Stuff
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+
+	(*w).Header().Add("Content-Type", "application/json")
 }
 
 func handleShadersGet(w http.ResponseWriter, r *http.Request) {
-	addResponseHeaders(w)
+	addResponseHeaders(&w)
 
 	params := r.URL.Query()
 	var startRow int = 2

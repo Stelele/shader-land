@@ -42,12 +42,9 @@
 import { RouterLink } from 'vue-router';
 import { useAuth0 } from '@auth0/auth0-vue';
 import { computed } from 'vue';
+import { getDisplayName } from '../helpers/getDisplayName';
 
 const { loginWithRedirect, logout, isAuthenticated, user } = useAuth0()
 
-const displayName = computed(() => (
-    user.value?.nickname?.length ?
-        (user.value.nickname ?? "") :
-        (user.value?.name?.split(" ")[0] ?? "")
-))
+const displayName = computed(() => getDisplayName(user))
 </script>

@@ -1,36 +1,39 @@
-import { useAuth0 } from "@auth0/auth0-vue";
 import { Axios } from "axios";
-import { Shader } from "./types/ShaderServiceTypes";
+import { Shader, ShaderRequest } from "./types/ShaderServiceTypes";
 
 export class ShaderService {
-    public static async getShader(shaderName: string) {
+    public static async getShaders() {
+        const client = await this.getClient()
+        return (await client.get<Shader[]>("/shaders")).data
+    }
+
+    public static async getShader(id: string) {
         const client = await this.getClient()
         try {
-            return (await client.get<Shader>("/shaders", {
-                params: {
-                    name: shaderName
-                }
-            })).data
+            return (await client.get<Shader>(`/shaders/${id}`)).data
         }
         catch (e) {
             console.error(e)
-            return undefined
         }
     }
 
-    private static async getClient() {
-        const { getAccessTokenSilently, isAuthenticated } = useAuth0()
+    public static async postShader(data: ShaderRequest, accessToken: string) {
+        const client = await this.getClient(accessToken)
+        return client.post<Shader>("/shaders", JSON.stringify(data))
+    }
+
+    private static async getClient(accessToken?: string) {
         const url = import.meta.env.VITE_BACKEND_SVC_URL
 
-        if (!isAuthenticated.value) {
+        if (!accessToken) {
             return new Axios({ baseURL: url })
         }
 
-        const token = await getAccessTokenSilently()
         return new Axios({
             baseURL: url,
             headers: {
-                Authorization: `Bearer ${token}`
+                Authorization: `Bearer ${accessToken}`,
+                "Content-Type": "application/json"
             }
         })
     }

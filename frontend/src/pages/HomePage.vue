@@ -16,7 +16,7 @@ onMounted(() => {
 const shaders = ref()
 
 async function init() {
-    shaders.value = await ShaderService.getShader("test")
+    shaders.value = await ShaderService.getShaders()
 }
 
 </script>

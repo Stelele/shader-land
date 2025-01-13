@@ -30,13 +30,21 @@ interface Props {
     startCode: string
 }
 const props = defineProps<Props>()
+const shaderCode = ref<string>(props.startCode)
+
+defineExpose({ getShaderCode })
 
 const renderer = ref<InstanceType<typeof Renderer> | null>(null)
 function onCodeChange(code: string) {
-    renderer.value?.loadFragmentShader(code)
+    shaderCode.value = code
+    renderer.value?.loadFragmentShader(shaderCode.value)
 }
 
 function onFullScreen() {
     renderer.value?.setFullScreen()
+}
+
+function getShaderCode() {
+    return shaderCode.value
 }
 </script>
