@@ -26,3 +26,4 @@ go.work.sum
 
 **/secrets.json
 **/.env.*
+**/sqlite.db
