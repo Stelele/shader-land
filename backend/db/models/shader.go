@@ -2,7 +2,9 @@ package models
 
 import (
 	"database/sql"
+	"encoding/base64"
 	"errors"
+	"net/url"
 
 	"github.com/google/uuid"
 	"github.com/mattn/go-sqlite3"
@@ -72,10 +74,10 @@ func (r *ShaderRepository) Create(shader ShaderRequest) (*Shader, error) {
 	`
 
 	urlId := uuid.New()
-	urlBytes := urlId[:]
-	url := string(urlBytes[:len(urlBytes)-2])
+	shaderUrl := base64.StdEncoding.EncodeToString(urlId[:])
+	shaderUrl = url.PathEscape(shaderUrl[:len(shaderUrl)-2])
 
-	res, err := r.db.Exec(command, shader.UserId, shader.Name, shader.Description, shader.Code, shader.CreationDate, url)
+	res, err := r.db.Exec(command, shader.UserId, shader.Name, shader.Description, shader.Code, shader.CreationDate, shaderUrl)
 	if err != nil {
 		var sqliteErr sqlite3.Error
 		if errors.As(err, &sqliteErr) {
@@ -95,7 +97,7 @@ func (r *ShaderRepository) Create(shader ShaderRequest) (*Shader, error) {
 	shaderResponse := Shader{
 		Id:           id,
 		UserId:       shader.UserId,
-		Url:          url,
+		Url:          shaderUrl,
 		Name:         shader.Name,
 		Description:  shader.Description,
 		Code:         shader.Code,
@@ -116,7 +118,7 @@ func (r *ShaderRepository) All() ([]Shader, error) {
 			code,
 			creationDate
 		FROM shaders
-		ORDER BY name
+		ORDER BY LOWER(name)
 	`
 
 	rows, err := r.db.Query(query)
@@ -164,11 +166,11 @@ func (r *ShaderRepository) GetByName(name string) ([]Shader, error) {
 			code,
 			creationDate
 		FROM shaders
-		WHERE name = ?
+		WHERE name LIKE ?
 		ORDER BY name
 	`
 
-	rows, err := r.db.Query(query, name)
+	rows, err := r.db.Query(query, "%"+name+"%")
 	if err != nil {
 		var sqliteErr sqlite3.Error
 		if errors.As(err, &sqliteErr) {
@@ -212,7 +214,7 @@ func (r *ShaderRepository) GetByUrl(url string) (*Shader, error) {
 			code,
 			creationDate
 		FROM shaders
-		Where url = ?
+		WHERE url = ?
 		ORDER BY name
 	`
 

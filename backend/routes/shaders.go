@@ -21,7 +21,16 @@ func initShadersRoutes(r *mux.Router) {
 func handleShadersGet(w http.ResponseWriter, r *http.Request) {
 	addResponseHeaders(&w)
 
-	all, err := db.DbRepo.Shaders.All()
+	name := r.URL.Query().Get("name")
+	var all []models.Shader
+	var err error
+
+	if name != "" {
+		all, err = db.DbRepo.Shaders.GetByName(name)
+	} else {
+		all, err = db.DbRepo.Shaders.All()
+	}
+
 	if err == nil {
 		json.NewEncoder(w).Encode(all)
 		return

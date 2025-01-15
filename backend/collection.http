@@ -1,0 +1,21 @@
+@baseUrl = http://localhost:8080
+
+POST {{baseUrl}}/shaders
+Content-Type: application/json
+
+{
+    "userId": 0,
+    "name": "apple test",
+    "description": "A sample test shader",
+    "code": "@fragment\nfn fs()->vec4f {\nreturn vec4f(1,0,0,1);\n}",
+    "creationDate": 245424
+}
+
+###
+GET {{baseUrl}}/shaders
+
+###
+GET {{baseUrl}}/shaders?name=test
+
+###
+GET {{baseUrl}}/shaders/test
