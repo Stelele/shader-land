@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -16,6 +17,8 @@ func initShadersRoutes(r *mux.Router) {
 	r.HandleFunc(baseUrl+"/{url}", handleShaderGet).Methods("GET")
 	r.HandleFunc(baseUrl, handleShadersGet).Methods("GET")
 	r.HandleFunc(baseUrl, handleShadersPost).Methods("POST", "OPTIONS")
+	r.HandleFunc(baseUrl+"/{id}", handleShaderDelete).Methods("DELETE")
+	r.HandleFunc(baseUrl+"/{id}", handleShaderUpdate).Methods("PUT", "OPTIONS")
 }
 
 func handleShadersGet(w http.ResponseWriter, r *http.Request) {
@@ -76,7 +79,7 @@ func handleShadersPost(w http.ResponseWriter, r *http.Request) {
 
 	shader, err := db.DbRepo.Shaders.Create(req)
 	if err == nil {
-		w.WriteHeader(http.StatusOK)
+		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(shader)
 		return
 	}
@@ -89,4 +92,55 @@ func handleShadersPost(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusInternalServerError)
 	json.NewEncoder(w).Encode(err)
+}
+
+func handleShaderUpdate(w http.ResponseWriter, r *http.Request) {
+	addResponseHeaders(&w)
+
+	if r.Method == "OPTIONS" {
+		return
+	}
+
+	var updated models.ShaderRequest
+	err := json.NewDecoder(r.Body).Decode(&updated)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(err)
+	}
+
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(err)
+	}
+
+	response, err := db.DbRepo.Shaders.Update(int64(id), updated)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(err)
+	}
+
+	w.WriteHeader(http.StatusAccepted)
+	json.NewEncoder(w).Encode(response)
+}
+
+func handleShaderDelete(w http.ResponseWriter, r *http.Request) {
+	addResponseHeaders(&w)
+
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(err)
+	}
+
+	err = db.DbRepo.Shaders.Delete(int64(id))
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

@@ -18,4 +18,46 @@ GET {{baseUrl}}/shaders
 GET {{baseUrl}}/shaders?name=test
 
 ###
-GET {{baseUrl}}/shaders/test
+@shaderUrl = Oj+ykDoDSZqXwqstjzcbIA
+GET {{baseUrl}}/shaders/{{shaderUrl}}
+
+###
+@shaderId = 4
+DELETE {{baseUrl}}/shaders/{{shaderId}}
+
+###
+@updateShaderId = 4
+PUT {{baseUrl}}/shaders/{{updateShaderId}}
+Content-Type: application/json
+
+{
+    "userId": 5,
+    "name": "Test shader",
+    "description": "A sample test",
+    "code": "@fragment\nfn fs()->vec4f {\nreturn vec4f(0.5,0.5,0,1);\n}",
+    "creationDate": 35138
+}
+
+###
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+    "userName": "same3",
+    "password": "pas123"
+}
+
+###
+GET {{baseUrl}}/users
+
+###
+GET {{baseUrl}}/users?userName=same3
+
+###
+@deleteUserId = 1
+DELETE {{baseUrl}}/users/{{deleteUserId}}
+
+###
+@checkUserName = same3
+@checkPassword = pas123
+POST {{baseUrl}}/users/password?userName={{checkUserName}}&password={{checkPassword}}

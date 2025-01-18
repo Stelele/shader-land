@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"net/url"
 
 	"github.com/google/uuid"
@@ -32,9 +33,10 @@ type ShaderInterface interface {
 	Migrate() error
 	Create(shader ShaderRequest) (*Shader, error)
 	All() ([]Shader, error)
+	GetById(id int64) (*Shader, error)
 	GetByName(name string) ([]Shader, error)
 	GetByUrl(url string) (*Shader, error)
-	Update(id int64, updated Shader) (*Shader, error)
+	Update(id int64, updated ShaderRequest) (*Shader, error)
 	Delete(id int64) error
 }
 
@@ -77,7 +79,15 @@ func (r *ShaderRepository) Create(shader ShaderRequest) (*Shader, error) {
 	shaderUrl := base64.StdEncoding.EncodeToString(urlId[:])
 	shaderUrl = url.PathEscape(shaderUrl[:len(shaderUrl)-2])
 
-	res, err := r.db.Exec(command, shader.UserId, shader.Name, shader.Description, shader.Code, shader.CreationDate, shaderUrl)
+	res, err := r.db.Exec(
+		command,
+		shader.UserId,
+		"\""+shader.Name+"\"",
+		"\""+shader.Description+"\"",
+		"\""+shader.Code+"\"",
+		shader.CreationDate,
+		"\""+shaderUrl+"\"")
+
 	if err != nil {
 		var sqliteErr sqlite3.Error
 		if errors.As(err, &sqliteErr) {
@@ -154,6 +164,48 @@ func (r *ShaderRepository) All() ([]Shader, error) {
 	return shaders, nil
 }
 
+func (r *ShaderRepository) GetById(id int64) (*Shader, error) {
+	query := `
+		SELECT
+			id,
+			userId,
+			url,
+			name,
+			description,
+			code,
+			creationDate
+		FROM shaders
+		WHERE id = ?
+	`
+
+	rows, err := r.db.Query(query, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	found := rows.Next()
+	if !found {
+		return nil, ErrNotExists
+	}
+
+	var shader Shader
+	err2 := rows.Scan(
+		&shader.Id,
+		&shader.UserId,
+		&shader.Url,
+		&shader.Name,
+		&shader.Description,
+		&shader.Code,
+		&shader.CreationDate,
+	)
+	if err2 != nil {
+		return nil, err
+	}
+
+	return &shader, nil
+}
+
 func (r *ShaderRepository) GetByName(name string) ([]Shader, error) {
 	shaders := make([]Shader, 0)
 	query := `
@@ -215,7 +267,6 @@ func (r *ShaderRepository) GetByUrl(url string) (*Shader, error) {
 			creationDate
 		FROM shaders
 		WHERE url = ?
-		ORDER BY name
 	`
 
 	rows, err := r.db.Query(query, url)
@@ -246,10 +297,68 @@ func (r *ShaderRepository) GetByUrl(url string) (*Shader, error) {
 	return &shader, nil
 }
 
-func (r *ShaderRepository) Update(id int64, updated Shader) (*Shader, error) {
-	return nil, errors.New("")
+func (r *ShaderRepository) Update(id int64, updated ShaderRequest) (*Shader, error) {
+	command := "UPDATE shaders SET "
+	updates := make([]any, 0, 4)
+	cols := make([]string, 0, 4)
+
+	if updated.Code != "" {
+		cols = append(cols, "code")
+		updates = append(updates, updated.Code)
+	}
+	if updated.CreationDate > 0 {
+		cols = append(cols, "creationDate")
+		updates = append(updates, updated.CreationDate)
+	}
+	if updated.Description != "" {
+		cols = append(cols, "description")
+		updates = append(updates, updated.Description)
+	}
+	if updated.Name != "" {
+		cols = append(cols, "name")
+		updates = append(updates, updated.Name)
+	}
+
+	if len(updates) == 0 {
+		resp, err := r.GetById(id)
+		return resp, err
+	}
+
+	for i := 0; i < len(updates); i++ {
+		if i == 0 {
+			command += fmt.Sprintf("%s = ?", cols[i])
+			continue
+		}
+		command += fmt.Sprintf(",%s = ? ", cols[i])
+	}
+	command += "WHERE id = ?"
+	updates = append(updates, id)
+
+	res, err := r.db.Exec(command, updates...)
+	if err != nil {
+		return nil, err
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return nil, err
+	}
+
+	if rowsAffected == 0 {
+		return nil, ErrUpdateFailed
+	}
+
+	shader, _ := r.GetById(id)
+	return shader, nil
 }
 
 func (r *ShaderRepository) Delete(id int64) error {
-	return errors.New("")
+	command := `DELETE FROM shaders WHERE id = ?`
+
+	_, err := r.db.Exec(command, id)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
