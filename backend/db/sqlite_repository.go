@@ -9,8 +9,7 @@ import (
 )
 
 type Repository struct {
-	Shaders models.ShaderInterface
-	Users   models.UserInteface
+	Shaders *models.ShaderRepository
 }
 
 var DbRepo *Repository
@@ -20,7 +19,6 @@ const dbFileName = "sqlite.db"
 func newRepository(db *sql.DB) *Repository {
 	return &Repository{
 		Shaders: models.NewShaderRepository(db),
-		Users:   models.NewUserRepository(db),
 	}
 }
 
@@ -28,13 +26,9 @@ func (r *Repository) migrate() []error {
 	errors := make([]error, 0)
 
 	err1 := r.Shaders.Migrate()
-	err2 := r.Users.Migrate()
 
 	if err1 != nil {
 		errors = append(errors, err1)
-	}
-	if err2 != nil {
-		errors = append(errors, err2)
 	}
 
 	return errors

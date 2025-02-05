@@ -8,12 +8,14 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/clerk/clerk-sdk-go/v2/user"
 	"github.com/gorilla/mux"
 )
 
 const baseUrl = "/shaders"
 
 func initShadersRoutes(r *mux.Router) {
+
 	r.HandleFunc(baseUrl+"/{url}", handleShaderGet).Methods("GET")
 	r.HandleFunc(baseUrl, handleShadersGet).Methods("GET")
 	r.HandleFunc(baseUrl, handleShadersPost).Methods("POST", "OPTIONS")
@@ -69,13 +71,29 @@ func handleShadersPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	claims, err := verifySession(r)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	user, err := user.Get(r.Context(), claims.Subject)
+	if err != nil {
+		w.WriteHeader(http.StatusForbidden)
+		msg := map[string]string{
+			"message": "User does not exist",
+		}
+		json.NewEncoder(w).Encode(msg)
+	}
+
 	var req models.ShaderRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
+	err = json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(err)
 		return
 	}
+	req.UserId = user.ID
+	req.UserName = *user.Username
 
 	shader, err := db.DbRepo.Shaders.Create(req)
 	if err == nil {

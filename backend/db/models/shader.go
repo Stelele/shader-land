@@ -13,7 +13,8 @@ import (
 
 type Shader struct {
 	Id           int64  `json:"id"`
-	UserId       int64  `json:"userId"`
+	UserId       string `json:"userId"`
+	UserName     string `json:"userName"`
 	Url          string `json:"url"`
 	Name         string `json:"name"`
 	Description  string `json:"description"`
@@ -22,22 +23,12 @@ type Shader struct {
 }
 
 type ShaderRequest struct {
-	UserId       int64  `json:"userId"`
+	UserId       string `json:"userId"`
+	UserName     string `json:"userName"`
 	Name         string `json:"name"`
 	Description  string `json:"description"`
 	Code         string `json:"code"`
 	CreationDate int    `json:"creationDate"`
-}
-
-type ShaderInterface interface {
-	Migrate() error
-	Create(shader ShaderRequest) (*Shader, error)
-	All() ([]Shader, error)
-	GetById(id int64) (*Shader, error)
-	GetByName(name string) ([]Shader, error)
-	GetByUrl(url string) (*Shader, error)
-	Update(id int64, updated ShaderRequest) (*Shader, error)
-	Delete(id int64) error
 }
 
 type ShaderRepository struct {
@@ -52,7 +43,8 @@ func (r *ShaderRepository) Migrate() error {
 	command := `
 	CREATE TABLE IF NOT EXISTS shaders(
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		userId INTEGER NOT NULL,
+		userId TEXT NOT NULL,
+		userName TEXT NOT NULL,
 		url TEXT NOT NULL UNIQUE,
 		name TEXT NOT NULL,
 		description TEXT,
@@ -71,8 +63,8 @@ func (r *ShaderRepository) Migrate() error {
 
 func (r *ShaderRepository) Create(shader ShaderRequest) (*Shader, error) {
 	command := `
-		INSERT INTO shaders(userId, name, description, code, creationDate, url)
-			VALUES(?,?,?,?,?,?)
+		INSERT INTO shaders(userId, userName, name, description, code, creationDate, url)
+			VALUES(?,?,?,?,?,?,?)
 	`
 
 	urlId := uuid.New()
@@ -82,11 +74,12 @@ func (r *ShaderRepository) Create(shader ShaderRequest) (*Shader, error) {
 	res, err := r.db.Exec(
 		command,
 		shader.UserId,
-		"\""+shader.Name+"\"",
-		"\""+shader.Description+"\"",
-		"\""+shader.Code+"\"",
+		shader.UserName,
+		shader.Name,
+		shader.Description,
+		shader.Code,
 		shader.CreationDate,
-		"\""+shaderUrl+"\"")
+		shaderUrl)
 
 	if err != nil {
 		var sqliteErr sqlite3.Error
@@ -107,6 +100,7 @@ func (r *ShaderRepository) Create(shader ShaderRequest) (*Shader, error) {
 	shaderResponse := Shader{
 		Id:           id,
 		UserId:       shader.UserId,
+		UserName:     shader.UserName,
 		Url:          shaderUrl,
 		Name:         shader.Name,
 		Description:  shader.Description,
@@ -122,6 +116,7 @@ func (r *ShaderRepository) All() ([]Shader, error) {
 		SELECT
 			id,
 			userId,
+			userName,
 			url,
 			name,
 			description,
@@ -148,6 +143,7 @@ func (r *ShaderRepository) All() ([]Shader, error) {
 		err := rows.Scan(
 			&shader.Id,
 			&shader.UserId,
+			&shader.UserName,
 			&shader.Url,
 			&shader.Name,
 			&shader.Description,
@@ -212,6 +208,7 @@ func (r *ShaderRepository) GetByName(name string) ([]Shader, error) {
 		SELECT
 			id,
 			userId,
+			userName,
 			url,
 			name,
 			description,
@@ -239,6 +236,7 @@ func (r *ShaderRepository) GetByName(name string) ([]Shader, error) {
 		err := rows.Scan(
 			&shader.Id,
 			&shader.UserId,
+			&shader.UserName,
 			&shader.Url,
 			&shader.Name,
 			&shader.Description,
@@ -260,6 +258,7 @@ func (r *ShaderRepository) GetByUrl(url string) (*Shader, error) {
 		SELECT
 			id,
 			userId,
+			userName,
 			url,
 			name,
 			description,
@@ -283,6 +282,7 @@ func (r *ShaderRepository) GetByUrl(url string) (*Shader, error) {
 	var shader Shader
 	err2 := rows.Scan(
 		&shader.Id,
+		&shader.UserId,
 		&shader.UserId,
 		&shader.Url,
 		&shader.Name,

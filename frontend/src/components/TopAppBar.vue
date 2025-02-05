@@ -11,27 +11,29 @@
 
             <div class="flex-none">
                 <ul class="menu menu-horizontal px-1">
-                    <span v-if="isAuthenticated" class="menu menu-horizontal mr-0 pr-0">Welcome</span>
-                    <li v-if="isAuthenticated" class="hover:text-blue-600">
-                        <RouterLink to="" class="hover:bg-transparent">{{ displayName }}</RouterLink>
-                    </li>
-                    <span v-if="isAuthenticated" class="menu menu-horizontal">|</span>
+                    <SignedIn>
+                        <span class="menu menu-horizontal mr-0 pr-0">Welcome</span>
+                        <li class="hover:text-blue-600">
+                            <RouterLink to="" class="hover:bg-transparent">{{ displayName }}</RouterLink>
+                        </li>
+                        <span class="menu menu-horizontal">|</span>
+                    </SignedIn>
                     <li class="hover:text-blue-600">
                         <RouterLink to="/view/1" class="hover:bg-transparent">Browse</RouterLink>
                     </li>
                     <li class="hover:text-blue-600">
                         <RouterLink to="/new" class="hover:bg-transparent">New</RouterLink>
                     </li>
-                    <li v-if="!isAuthenticated" class="hover:text-blue-600">
-                        <RouterLink to="" @click.prevent="loginWithRedirect()" class="hover:bg-transparent">
-                            Log In
-                        </RouterLink>
-                    </li>
-                    <li v-if="isAuthenticated" class="hover:text-blue-600 hover:bg-transparent">
-                        <RouterLink to="" @click.prevent="logout()" class="hover:bg-transparent">
-                            Log Out
-                        </RouterLink>
-                    </li>
+                    <SignedOut>
+                        <li>
+                            <SignInButton class="hover:bg-transparent hover:text-blue-600 bg-transparent" />
+                        </li>
+                    </SignedOut>
+                    <SignedIn>
+                        <li>
+                            <SignOutButton class="hover:bg-transparent hover:text-blue-600 bg-transparent" />
+                        </li>
+                    </SignedIn>
                 </ul>
             </div>
         </div>
@@ -39,12 +41,11 @@
 </template>
 
 <script lang="ts" setup>
-import { RouterLink } from 'vue-router';
-import { useAuth0 } from '@auth0/auth0-vue';
 import { computed } from 'vue';
-import { getDisplayName } from '../helpers/getDisplayName';
+import { RouterLink } from 'vue-router';
+import { SignInButton, SignOutButton, SignedIn, SignedOut, useUser } from '@clerk/vue';
 
-const { loginWithRedirect, logout, isAuthenticated, user } = useAuth0()
+const user = useUser()
+const displayName = computed(() => user.user.value?.username)
 
-const displayName = computed(() => getDisplayName(user))
 </script>

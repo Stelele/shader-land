@@ -10,10 +10,7 @@ export interface Shader {
 }
 
 export interface ShaderRequest {
-    email: string
-    userName: string
     name: string
-    tags: string
     description: string
     code: string
     creationDate: number

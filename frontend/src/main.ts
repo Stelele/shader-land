@@ -2,15 +2,15 @@ import { createApp } from 'vue'
 import './style.css'
 import App from './App.vue'
 import { router } from './routes'
-import { createAuth0 } from '@auth0/auth0-vue'
+import { clerkPlugin } from '@clerk/vue'
+
+const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
+
+if (!PUBLISHABLE_KEY) {
+    throw new Error('Add your Clerk Publishable Key to the .env.local file')
+}
 
 createApp(App)
     .use(router)
-    .use(createAuth0({
-        domain: import.meta.env.VITE_AUTH0_DOMAIN,
-        clientId: import.meta.env.VITE_AUTH0_CLIENT_ID,
-        authorizationParams: {
-            redirect_uri: window.location.origin
-        }
-    }))
+    .use(clerkPlugin, { publishableKey: PUBLISHABLE_KEY })
     .mount('#app')
