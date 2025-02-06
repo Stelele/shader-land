@@ -7,19 +7,16 @@ export class ShaderService {
         return (await client.get<Shader[]>("/shaders")).data
     }
 
-    public static async getShader(id: string) {
+    public static async getShader(id: string): Promise<Shader> {
         const client = await this.getClient()
-        try {
-            return (await client.get<Shader>(`/shaders/${id}`)).data
-        }
-        catch (e) {
-            console.error(e)
-        }
+        const response = await client.get(`/shaders/${id}`)
+        return JSON.parse(response.data)
     }
 
-    public static async postShader(data: ShaderRequest, accessToken: string) {
+    public static async postShader(data: ShaderRequest, accessToken: string): Promise<Shader> {
         const client = await this.getClient(accessToken)
-        return client.post<Shader>("/shaders", JSON.stringify(data))
+        const response = await client.post("/shaders", JSON.stringify(data))
+        return JSON.parse(response.data)
     }
 
     private static async getClient(accessToken?: string) {

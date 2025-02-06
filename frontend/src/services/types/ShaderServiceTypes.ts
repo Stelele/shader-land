@@ -1,9 +1,9 @@
 export interface Shader {
     id: string
-    email: string
+    url: string
+    userId: string
     userName: string
     name: string
-    tags: string
     description: string
     code: string
     creationDate: number

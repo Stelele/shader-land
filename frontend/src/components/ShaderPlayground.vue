@@ -22,15 +22,16 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue';
-import Renderer from './Renderer/Renderer.vue';
-import Editor from './Editor.vue';
+import { ref } from 'vue'
+import Renderer from './Renderer/Renderer.vue'
+import Editor from './Editor.vue'
 
 interface Props {
     startCode: string
 }
 const props = defineProps<Props>()
 const shaderCode = ref<string>(props.startCode)
+
 
 defineExpose({ getShaderCode })
 
