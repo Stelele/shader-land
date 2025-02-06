@@ -1,5 +1,7 @@
 <template>
-    <h1>Home Page</h1>
+    <div class="prose">
+        <h1>Home</h1>
+    </div>
     <div>
         {{ shaders }}
     </div>

@@ -1,6 +1,6 @@
 <template>
     <div>
-        <ShaderPlayground :start-code="StartShaderFs">
+        <ShaderPlayground :start-code="shaderDetails?.code ?? ''">
             <ViewShaderDetails :is-editable="isEditable" :name="shaderDetails?.name"
                 :description="shaderDetails?.description" />
         </ShaderPlayground>
@@ -11,7 +11,6 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useUser } from '@clerk/vue';
-import { StartShaderFs } from '../components/Renderer/Start.shader';
 import ShaderPlayground from '../components/ShaderPlayground.vue';
 import ViewShaderDetails from '../components/ViewShaderDetails.vue';
 import { ShaderService } from '../services/ShaderService';

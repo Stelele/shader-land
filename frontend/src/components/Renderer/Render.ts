@@ -21,16 +21,20 @@ export class Render {
     private iTimeDeltaUniform!: GPUBuffer
     private iResolutionUniform!: GPUBuffer
 
+    // update functions
+    private updateFunc!: (info: BufferInfo) => void
+
     public constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas
     }
 
-    public async init() {
+    public async init(updateFunc: (time: BufferInfo) => void) {
         await this.initDevice()
         this.loadFragmentShader(StartShaderFs)
         this.setupRenderPassDescriptor()
         this.setupBuffers()
-        this.startAnimation(120)
+        this.updateFunc = updateFunc
+        this.startAnimation()
     }
 
     private async initDevice() {
@@ -173,10 +177,9 @@ export class Render {
 
     }
 
-    private startAnimation(targetFps: number) {
+    private startAnimation() {
         let prev = new Date()
         let render = this
-        const targetS = 1 / targetFps
 
         const bufferInfo: BufferInfo = {
             resolution: [0, 0, 0],
@@ -191,16 +194,14 @@ export class Render {
             const cur = new Date()
             const diff = (cur.getTime() - prev.getTime()) / 1000
 
-            if (diff > targetS) {
-                prev = cur
+            prev = cur
 
-                bufferInfo.time = bufferInfo.time + diff
-                bufferInfo.timeDelta = diff
-                bufferInfo.frameRate = 1 / diff
-                bufferInfo.frame += 1
+            bufferInfo.time = bufferInfo.time + diff
+            bufferInfo.timeDelta = diff
+            bufferInfo.frameRate = 1 / diff
+            bufferInfo.frame += 1
 
-                render.render(bufferInfo)
-            }
+            render.render(bufferInfo)
 
             requestAnimationFrame(animate)
         }
@@ -235,10 +236,13 @@ export class Render {
 
         pass.end()
         this.device.queue.submit([encoder.finish()])
+
+        // call update function
+        this.updateFunc(info)
     }
 }
 
-interface BufferInfo {
+export interface BufferInfo {
     resolution: number[],
     time: number,
     timeDelta: number,

@@ -6,16 +6,20 @@
                     <label v-if="props.isEditable" class="input input-bordered flex items-center">
                         <input type="text" class="grow" v-model="name" placeholder="Name of your shader" />
                     </label>
-                    <label v-if="!props.isEditable" class="">
-                        {{ props.name }}
-                    </label>
                     <label v-if="props.isEditable" class="flex items-center">
                         <textarea class="grow textarea textarea-bordered" v-model="description"
                             placeholder="Describe your shader"></textarea>
                     </label>
-                    <label v-if="!props.isEditable" class="">
-                        {{ props.description }}
-                    </label>
+                    <div class="prose" v-if="!props.isEditable">
+                        <h2>
+                            {{ props.name }}
+                        </h2>
+                        <p>
+                            {{ props.description }}
+                        </p>
+                    </div>
+
+
                     <button v-if="isEditable" class="btn btn-primary" type="submit">Update</button>
                 </div>
             </div>

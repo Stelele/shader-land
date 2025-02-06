@@ -6,7 +6,11 @@
 
 <script lang="ts" setup>
 import { onMounted, ref } from 'vue';
-import { Render } from './Render';
+import { BufferInfo, Render } from './Render';
+
+const emit = defineEmits<{
+    onFrameRun: [BufferInfo]
+}>()
 
 const webgpuCanvas = ref<HTMLCanvasElement | null>(null)
 let render: Render
@@ -18,7 +22,7 @@ defineExpose({ loadFragmentShader, setFullScreen })
 
 async function startRendering() {
     render = new Render(webgpuCanvas.value as HTMLCanvasElement)
-    await render.init()
+    await render.init(onFrameRun)
 }
 
 function loadFragmentShader(code: string) {
@@ -29,5 +33,9 @@ function loadFragmentShader(code: string) {
 
 function setFullScreen() {
     webgpuCanvas.value?.requestFullscreen()
+}
+
+function onFrameRun(info: BufferInfo) {
+    emit('onFrameRun', info)
 }
 </script>

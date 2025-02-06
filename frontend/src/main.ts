@@ -3,12 +3,15 @@ import './style.css'
 import App from './App.vue'
 import { router } from './routes'
 import { clerkPlugin } from '@clerk/vue'
+import { addIcons } from './helpers/addIcons'
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
 
 if (!PUBLISHABLE_KEY) {
     throw new Error('Add your Clerk Publishable Key to the .env.local file')
 }
+
+addIcons()
 
 createApp(App)
     .use(router)

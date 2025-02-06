@@ -2,9 +2,10 @@ import { Axios } from "axios";
 import { Shader, ShaderRequest } from "./types/ShaderServiceTypes";
 
 export class ShaderService {
-    public static async getShaders() {
+    public static async getShaders(): Promise<Shader[]> {
         const client = await this.getClient()
-        return (await client.get<Shader[]>("/shaders")).data
+        const response = await client.get("/shaders")
+        return JSON.parse(response.data)
     }
 
     public static async getShader(id: string): Promise<Shader> {
