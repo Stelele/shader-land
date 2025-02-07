@@ -18,7 +18,7 @@ onMounted(() => {
     startRendering()
 })
 
-defineExpose({ loadFragmentShader, setFullScreen })
+defineExpose({ loadFragmentShader, setFullScreen, toggleAnimation, resetAnimation, startRecording, stopRecording })
 
 async function startRendering() {
     render = new Render(webgpuCanvas.value as HTMLCanvasElement)
@@ -37,5 +37,21 @@ function setFullScreen() {
 
 function onFrameRun(info: BufferInfo) {
     emit('onFrameRun', info)
+}
+
+function toggleAnimation() {
+    render.isPaused = !render.isPaused
+}
+
+function resetAnimation() {
+    render.reset = true
+}
+
+function startRecording() {
+    render.recordVideo(true)
+}
+
+function stopRecording() {
+    render.recordVideo(false)
 }
 </script>

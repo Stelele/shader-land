@@ -23,6 +23,13 @@ export class Render {
 
     // update functions
     private updateFunc!: (info: BufferInfo) => void
+    public isPaused = false
+    public reset = false
+
+    // recording
+    private videoStream?: MediaStream
+    private mediaRecorder?: MediaRecorder
+    private videoChunks?: Blob[]
 
     public constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas
@@ -191,6 +198,19 @@ export class Render {
 
         requestAnimationFrame(animate)
         function animate() {
+            if (render.isPaused) {
+                prev = new Date()
+                requestAnimationFrame(animate)
+                return
+            }
+            if (render.reset) {
+                bufferInfo.time = 0
+                bufferInfo.timeDelta = 0
+                bufferInfo.frameRate = 0
+                bufferInfo.frame = 0
+                render.reset = false
+            }
+
             const cur = new Date()
             const diff = (cur.getTime() - prev.getTime()) / 1000
 
@@ -239,6 +259,41 @@ export class Render {
 
         // call update function
         this.updateFunc(info)
+    }
+
+    public recordVideo(isRecording: boolean) {
+        if (!isRecording) {
+            this.saveVideo()
+            return
+        }
+        this.startRecordingVideo()
+    }
+
+    private saveVideo() {
+        this.mediaRecorder?.stop()
+    }
+
+    private startRecordingVideo() {
+        this.videoStream = this.canvas.captureStream()
+        this.mediaRecorder = new MediaRecorder(this.videoStream)
+        this.videoChunks = []
+        const renderer = this
+
+        this.mediaRecorder.start()
+
+        this.mediaRecorder.ondataavailable = (e) => {
+            renderer.videoChunks?.push(e.data)
+        }
+
+        this.mediaRecorder.onstop = () => {
+            const blob = new Blob(renderer.videoChunks, { type: "video/mp4" })
+            const videoUrl = URL.createObjectURL(blob)
+
+            const link = document.createElement('a')
+            link.download = "recordingVideo"
+            link.href = videoUrl
+            link.click()
+        }
     }
 }
 
