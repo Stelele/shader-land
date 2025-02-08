@@ -1,5 +1,5 @@
 <template>
-    <div class="grid grid-rows-2">
+    <div class="grid grid-rows-2" v-if="clerk?.loaded">
         <div>
             <ShaderPlayground ref="shaderPlayground" :start-code="StartShaderFs">
                 <SubmitShaderDetails v-if="isSignedIn" @on-submit="onSubmit" />
@@ -9,19 +9,22 @@
 
         </div>
     </div>
+    <ShaderSkeletonLoader v-else />
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuth, useUser } from '@clerk/vue';
-import ShaderPlayground from '../components/ShaderPlayground.vue';
-import SubmitShaderDetails from '../components/SubmitShaderDetails.vue';
-import { StartShaderFs } from '../components/Renderer/Start.shader';
-import { ShaderService } from '../services/ShaderService';
-import { ShaderRequest } from '../services/types/ShaderServiceTypes';
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuth, useClerk, useUser } from '@clerk/vue'
+import ShaderPlayground from '../components/ShaderPlayground.vue'
+import SubmitShaderDetails from '../components/SubmitShaderDetails.vue'
+import ShaderSkeletonLoader from '../views/ShaderSkeletonLoader.vue'
+import { StartShaderFs } from '../components/Renderer/Start.shader'
+import { ShaderService } from '../services/ShaderService'
+import { ShaderRequest } from '../services/types/ShaderServiceTypes'
 
 const shaderPlayground = ref<InstanceType<typeof ShaderPlayground> | null>(null)
+const clerk = useClerk()
 
 const { isSignedIn } = useUser()
 const { getToken } = useAuth()

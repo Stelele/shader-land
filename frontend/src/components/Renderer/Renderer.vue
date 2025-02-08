@@ -1,6 +1,6 @@
 <template>
     <div id="container">
-        <canvas class="w-full min-w-4 h-[45vh]" ref="webgpuCanvas"></canvas>
+        <canvas class="w-full h-full min-w-4 min-h-4" ref="webgpuCanvas"></canvas>
     </div>
 </template>
 
@@ -12,6 +12,7 @@ const emit = defineEmits<{
     onFrameRun: [BufferInfo]
 }>()
 
+const isReady = ref(false)
 const webgpuCanvas = ref<HTMLCanvasElement | null>(null)
 let render: Render
 onMounted(() => {
@@ -22,13 +23,16 @@ defineExpose({ loadFragmentShader, setFullScreen, toggleAnimation, resetAnimatio
 
 async function startRendering() {
     render = new Render(webgpuCanvas.value as HTMLCanvasElement)
-    await render.init(onFrameRun)
+    await render.init(onFrameRun, onReady)
 }
 
 function loadFragmentShader(code: string) {
-    if (render) {
-        render.loadFragmentShader(code)
+    if (!isReady.value) {
+        setTimeout(loadFragmentShader, undefined, code)
+        return
     }
+
+    render.loadFragmentShader(code)
 }
 
 function setFullScreen() {
@@ -53,5 +57,9 @@ function startRecording() {
 
 function stopRecording() {
     render.recordVideo(false)
+}
+
+function onReady() {
+    isReady.value = true
 }
 </script>

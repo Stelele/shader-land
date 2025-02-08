@@ -1,7 +1,7 @@
 import { StartShaderFs, StartShaderVs, Uniforms } from "./Start.shader"
 
 export class Render {
-    private device!: GPUDevice
+    private static device: GPUDevice
     private canvas: HTMLCanvasElement
     private context!: GPUCanvasContext
     private presentationFormat!: GPUTextureFormat
@@ -35,22 +35,25 @@ export class Render {
         this.canvas = canvas
     }
 
-    public async init(updateFunc: (time: BufferInfo) => void) {
+    public async init(updateFunc: (time: BufferInfo) => void, onReady: () => void) {
         await this.initDevice()
         this.loadFragmentShader(StartShaderFs)
         this.setupRenderPassDescriptor()
         this.setupBuffers()
         this.updateFunc = updateFunc
         this.startAnimation()
+        onReady()
     }
 
     private async initDevice() {
-        const adapter = await navigator.gpu.requestAdapter()
-        if (!adapter) {
-            throw new Error("Failed to get adapter")
-        }
+        if (!Render.device) {
+            const adapter = await navigator.gpu.requestAdapter()
+            if (!adapter) {
+                throw new Error("Failed to get adapter")
+            }
 
-        this.device = await adapter.requestDevice()
+            Render.device = await adapter.requestDevice()
+        }
 
         this.presentationFormat = navigator.gpu.getPreferredCanvasFormat()
         const context = this.canvas.getContext("webgpu")
@@ -59,7 +62,7 @@ export class Render {
         }
         this.context = context
         this.context.configure({
-            device: this.device,
+            device: Render.device,
             format: this.presentationFormat,
         })
     }
@@ -72,16 +75,16 @@ export class Render {
     }
 
     private setupPipeline(fragmentShaderCode: string) {
-        const vertexShader = this.device.createShaderModule({
+        const vertexShader = Render.device.createShaderModule({
             label: "Vertex Shader",
             code: StartShaderVs,
         })
-        const fragmentShader = this.device.createShaderModule({
+        const fragmentShader = Render.device.createShaderModule({
             label: "Fragment Shader",
             code: fragmentShaderCode,
         })
 
-        this.bindGroupLayout = this.device.createBindGroupLayout({
+        this.bindGroupLayout = Render.device.createBindGroupLayout({
             label: "Bind group layout",
             entries: [
                 {
@@ -111,12 +114,12 @@ export class Render {
                 },
             ]
         })
-        const pipelineLayout = this.device.createPipelineLayout({
+        const pipelineLayout = Render.device.createPipelineLayout({
             label: "Pipeline Layout",
             bindGroupLayouts: [this.bindGroupLayout]
         })
 
-        this.pipeline = this.device.createRenderPipeline({
+        this.pipeline = Render.device.createRenderPipeline({
             label: "Render Pipeline",
             layout: pipelineLayout,
             vertex: {
@@ -144,33 +147,33 @@ export class Render {
     }
 
     private setupBuffers() {
-        this.iResolutionUniform = this.device.createBuffer({
+        this.iResolutionUniform = Render.device.createBuffer({
             label: "iResolution Uniform",
             size: 3 * 4,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         })
-        this.iTimeUniform = this.device.createBuffer({
+        this.iTimeUniform = Render.device.createBuffer({
             label: "iTime Uniform",
             size: 1 * 4,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         })
-        this.iTimeDeltaUniform = this.device.createBuffer({
+        this.iTimeDeltaUniform = Render.device.createBuffer({
             label: "iTimeDelta Uniform",
             size: 1 * 4,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         })
-        this.iFrameRateUniform = this.device.createBuffer({
+        this.iFrameRateUniform = Render.device.createBuffer({
             label: "iFrameRate Uniform",
             size: 1 * 4,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         })
-        this.iFrameUniform = this.device.createBuffer({
+        this.iFrameUniform = Render.device.createBuffer({
             label: "iFrame Uniform",
             size: 1 * 4,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         })
 
-        this.bindGroup = this.device.createBindGroup({
+        this.bindGroup = Render.device.createBindGroup({
             label: "Bind Group",
             layout: this.bindGroupLayout,
             entries: [
@@ -240,22 +243,22 @@ export class Render {
             }
         }
 
-        const encoder = this.device.createCommandEncoder()
+        const encoder = Render.device.createCommandEncoder()
         const pass = encoder.beginRenderPass(this.renderPassDescriptor)
 
         pass.setPipeline(this.pipeline)
 
-        this.device.queue.writeBuffer(this.iResolutionUniform, 0, new Float32Array(info.resolution))
-        this.device.queue.writeBuffer(this.iTimeUniform, 0, new Float32Array([info.time]))
-        this.device.queue.writeBuffer(this.iTimeDeltaUniform, 0, new Float32Array([info.timeDelta]))
-        this.device.queue.writeBuffer(this.iFrameRateUniform, 0, new Float32Array([info.frameRate]))
-        this.device.queue.writeBuffer(this.iFrameUniform, 0, new Uint32Array([info.frame]))
+        Render.device.queue.writeBuffer(this.iResolutionUniform, 0, new Float32Array(info.resolution))
+        Render.device.queue.writeBuffer(this.iTimeUniform, 0, new Float32Array([info.time]))
+        Render.device.queue.writeBuffer(this.iTimeDeltaUniform, 0, new Float32Array([info.timeDelta]))
+        Render.device.queue.writeBuffer(this.iFrameRateUniform, 0, new Float32Array([info.frameRate]))
+        Render.device.queue.writeBuffer(this.iFrameUniform, 0, new Uint32Array([info.frame]))
 
         pass.setBindGroup(0, this.bindGroup)
         pass.draw(3)
 
         pass.end()
-        this.device.queue.submit([encoder.finish()])
+        Render.device.queue.submit([encoder.finish()])
 
         // call update function
         this.updateFunc(info)

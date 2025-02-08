@@ -3,7 +3,7 @@
         <div class="flex flex-col gap-4 col-span-2">
             <div class="card card-compact bg-base-100 md:col-span-2 shadow-xl">
                 <div class="card-body">
-                    <Renderer ref="renderer" @on-frame-run="onRenderUpdate" />
+                    <Renderer ref="renderer" class="min-h-[40vh]" @on-frame-run="onRenderUpdate" />
                     <div class="card-actions flex gap-0">
                         <div class="flex gap-4">
                             <div @click="resetAnimation" class="hover:cursor-pointer w-fit">
